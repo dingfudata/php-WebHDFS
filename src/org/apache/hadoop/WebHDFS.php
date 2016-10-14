@@ -35,12 +35,12 @@ class WebHDFS {
 
 	// File and Directory Operations
 
-	public function create($path, $filename) {
+	public function create($path, $filename, $option) {
 		if (!file_exists($filename)) {
 			return false;
 		}
 
-		$url = $this->_buildUrl($path, array('op'=>'CREATE'));
+		$url = $this->_buildUrl($path, array('op'=>'CREATE'), $option);
 		$redirectUrl = $this->curl->putLocation($url);
 		$result = $this->curl->putFile($redirectUrl, $filename);
 		if($result !== true) {
@@ -48,8 +48,8 @@ class WebHDFS {
 		}
 		return $result;
 	}
-	public function createWithData($path, $data) {
-		$url = $this->_buildUrl($path, array('op' => 'CREATE'));
+	public function createWithData($path, $data, $option) {
+		$url = $this->_buildUrl($path, array('op' => 'CREATE'), $option);
 		$redirectUrl = $this->curl->putLocation($url);
 		$result = false;
 		if($redirectUrl) {
@@ -61,19 +61,19 @@ class WebHDFS {
 		return $result;
 	}
 
-	public function append($path, $string, $bufferSize='') {
-		$url = $this->_buildUrl($path, array('op'=>'APPEND', 'buffersize'=>$bufferSize));
+	public function append($path, $string, $bufferSize='', $option=[]) {
+		$url = $this->_buildUrl($path, array('op'=>'APPEND', 'buffersize'=>$bufferSize), $option);
 		$redirectUrl = $this->curl->postLocation($url);
 		return $this->curl->postString($redirectUrl, $string);
 	}
 
-	public function concat($path, $sources) {
-		$url = $this->_buildUrl($path, array('op'=>'CONCAT', 'sources'=>$sources));
+	public function concat($path, $sources, $option=[]) {
+		$url = $this->_buildUrl($path, array('op'=>'CONCAT', 'sources'=>$sources), $option);
 		return $this->curl->post($url);
 	}
 
-	public function open($path, $offset='', $length='', $bufferSize='') {
-		$url = $this->_buildUrl($path, array('op'=>'OPEN', 'offset'=>$offset, 'length'=>$length, 'buffersize'=>$bufferSize));
+	public function open($path, $offset='', $length='', $bufferSize='', $option=[]) {
+		$url = $this->_buildUrl($path, array('op'=>'OPEN', 'offset'=>$offset, 'length'=>$length, 'buffersize'=>$bufferSize), $option);
 		$result = $this->curl->getWithRedirect($url);
 		if($this->curl->validateLastRequest()) {
 			return $result;
@@ -81,33 +81,33 @@ class WebHDFS {
 		throw $this->getResponseErrorException($this->curl->getLastRequestContentResult());
 	}
 
-	public function mkdirs($path, $permission='') {
-		$url = $this->_buildUrl($path, array('op'=>'MKDIRS', 'permission'=>$permission));
+	public function mkdirs($path, $permission='', $option=[]) {
+		$url = $this->_buildUrl($path, array('op'=>'MKDIRS', 'permission'=>$permission), $option);
 		return $this->curl->put($url);
 	}
 
-	public function createSymLink($path, $destination, $createParent='') {
-		$url = $this->_buildUrl($destination, array('op'=>'CREATESYMLINK', 'destination'=>$path, 'createParent'=>$createParent));
+	public function createSymLink($path, $destination, $createParent='', $option=[]) {
+		$url = $this->_buildUrl($destination, array('op'=>'CREATESYMLINK', 'destination'=>$path, 'createParent'=>$createParent), $option);
 		return $this->curl->put($url);
 	}
 
-	public function rename($path, $destination) {
-		$url = $this->_buildUrl($path, array('op'=>'RENAME', 'destination'=>$destination));
+	public function rename($path, $destination, $option=[]) {
+		$url = $this->_buildUrl($path, array('op'=>'RENAME', 'destination'=>$destination), $option);
 		return $this->curl->put($url);
 	}
 
-	public function delete($path, $recursive='') {
-		$url = $this->_buildUrl($path, array('op'=>'DELETE', 'recursive'=>$recursive));
+	public function delete($path, $recursive='', $option=[]) {
+		$url = $this->_buildUrl($path, array('op'=>'DELETE', 'recursive'=>$recursive), $option);
 		return $this->curl->delete($url);
 	}
 
-	public function getFileStatus($path) {
-		$url = $this->_buildUrl($path, array('op'=>'GETFILESTATUS'));
+	public function getFileStatus($path, $option=[]) {
+		$url = $this->_buildUrl($path, array('op'=>'GETFILESTATUS'), $option);
 		return $this->curl->get($url);
 	}
 
-	public function listStatus($path) {
-		$url = $this->_buildUrl($path, array('op'=>'LISTSTATUS'));
+	public function listStatus($path, $option=[]) {
+		$url = $this->_buildUrl($path, array('op'=>'LISTSTATUS'), $option);
 		if($result = $this->curl->get($url)) {
 			$result = json_decode($result);
 			if(!is_null($result)) {
@@ -120,6 +120,7 @@ class WebHDFS {
 		}
 		return false;
 	}
+
 	public function listFiles($path, $recursive = false, $includeFileMetaData = false, $maxAmountOfFiles = false) {
 		$result = array();
 		$listStatusResult = $this->listStatus($path);
@@ -176,9 +177,9 @@ class WebHDFS {
 	}
 	// Other File System Operations
 
-	public function getContentSummary($path) {
+	public function getContentSummary($path, $option=[]) {
 		$result = false;
-		$url = $this->_buildUrl($path, array('op'=>'GETCONTENTSUMMARY'));
+		$url = $this->_buildUrl($path, array('op'=>'GETCONTENTSUMMARY'), $option);
 		$rawResult = $this->curl->get($url);
 		$resultDecoded = json_decode($rawResult);
 		if(isset($resultDecoded->ContentSummary)) {
@@ -189,37 +190,38 @@ class WebHDFS {
 		return $result;
 	}
 
-	public function getFileChecksum($path) {
-		$url = $this->_buildUrl($path, array('op'=>'GETFILECHECKSUM'));
+	public function getFileChecksum($path, $option=[]) {
+		$url = $this->_buildUrl($path, array('op'=>'GETFILECHECKSUM'), $option);
 		return $this->curl->getWithRedirect($url);
 	}
 
-	public function getHomeDirectory() {
-		$url = $this->_buildUrl('', array('op'=>'GETHOMEDIRECTORY'));
+	public function getHomeDirectory($option=[]) {
+		$url = $this->_buildUrl('', array('op'=>'GETHOMEDIRECTORY'), $option);
 		return $this->curl->get($url);
 	}
 
-	public function setPermission($path, $permission) {
-		$url = $this->_buildUrl($path, array('op'=>'SETPERMISSION', 'permission'=>$permission));
+	public function setPermission($path, $permission, $option=[]) {
+		$url = $this->_buildUrl($path, array('op'=>'SETPERMISSION', 'permission'=>$permission), $option);
 		return $this->curl->put($url);
 	}
 
-	public function setOwner($path, $owner='', $group='') {
-		$url = $this->_buildUrl($path, array('op'=>'SETOWNER', 'owner'=>$owner, 'group'=>$group));
+	public function setOwner($path, $owner='', $group='', $option=[]) {
+		$url = $this->_buildUrl($path, array('op'=>'SETOWNER', 'owner'=>$owner, 'group'=>$group), $option);
 		return $this->curl->put($url);
 	}
 
-	public function setReplication($path, $replication) {
-		$url = $this->_buildUrl($path, array('op'=>'SETREPLICATION', 'replication'=>$replication));
+	public function setReplication($path, $replication, $option=[]) {
+		$url = $this->_buildUrl($path, array('op'=>'SETREPLICATION', 'replication'=>$replication), $option);
 		return $this->curl->put($url);
 	}
 
-	public function setTimes($path, $modificationTime='', $accessTime='') {
-		$url = $this->_buildUrl($path, array('op'=>'SETTIMES', 'modificationtime'=>$modificationTime, 'accesstime'=>$accessTime));
+	public function setTimes($path, $modificationTime='', $accessTime='', $option=[]) {
+		$url = $this->_buildUrl($path, array('op'=>'SETTIMES', 'modificationtime'=>$modificationTime, 'accesstime'=>$accessTime), $option);
 		return $this->curl->put($url);
 	}
 
-	private function _buildUrl($path, $query_data) {
+	private function _buildUrl($path, $query_data, $option=[]) {
+		$query_data = array_merge($query_data, $option);
 		if (strlen($path) && $path[0] == '/') {
 			$path = substr($path, 1);
 		}
